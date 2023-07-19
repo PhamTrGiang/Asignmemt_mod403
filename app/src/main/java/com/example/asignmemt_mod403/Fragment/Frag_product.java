@@ -1,44 +1,43 @@
 package com.example.asignmemt_mod403.Fragment;
 
+import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.GridView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.VolleyLog;
-import com.android.volley.toolbox.JsonArrayRequest;
 import com.example.asignmemt_mod403.Adapter.Product_Adapter;
-import com.example.asignmemt_mod403.AppController;
+import com.example.asignmemt_mod403.AddProduct;
+import com.example.asignmemt_mod403.DeleteProduct;
+import com.example.asignmemt_mod403.EditProduct;
+import com.example.asignmemt_mod403.GetProduct;
 import com.example.asignmemt_mod403.Model.Product;
 import com.example.asignmemt_mod403.R;
 import com.example.asignmemt_mod403.UrlString;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.util.ArrayList;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 
 
 public class Frag_product extends Fragment {
     GridView gridView;
-    private String urlString = "http://"+ UrlString.ipv4 +":3000/api";
-
-    private static String TAG = Frag_product.class.getSimpleName();
-    private ProgressDialog pDialog;
-
-    ArrayList<Product> list = new ArrayList<>();
-
+    FloatingActionButton floatingActionButton;
+    ProgressDialog pDialog;
+    Dialog dialog;
+    Product_Adapter product_adapter;
     public Frag_product() {
         // Required empty public constructor
     }
@@ -48,67 +47,123 @@ public class Frag_product extends Fragment {
                              Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_product, container, false);
         gridView = v.findViewById(R.id.gridView);
-        pDialog = new ProgressDialog(getContext());
-        pDialog.setMessage("Please wait...");
-        pDialog.setCancelable(false);
-        makeJsonArrayRequest();
+        pDialog = new ProgressDialog(getActivity());
+        floatingActionButton = v.findViewById(R.id.btnAdd);
+        reload(getContext());
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                add();
+            }
+        });
+
         return v;
     }
 
-    private void makeJsonArrayRequest() {
-        showDialog();
-        JsonArrayRequest arrayRequest = new JsonArrayRequest(urlString,
-                new Response.Listener<JSONArray>() {
-                    @Override
-                    public void onResponse(JSONArray jsonArray) {
-                        Log.d(TAG, jsonArray.toString());
-                        try {
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject product = (JSONObject) jsonArray.get(i);
-                                String id = product.getString("_id");
-                                String name = product.getString("name");
-                                String price = product.getString("price");
-                                String quatity = product.getString("quantity");
-                                String type = product.getString("type");
-                                String image = product.getString("image");
+    public void reload(Context context){
+        GetProduct getProduct = new GetProduct(gridView,context);
+        getProduct.execute();
+    }
 
-                                Product objProduct = new Product();
-                                objProduct.setId(id);
-                                objProduct.setImage(image);
-                                objProduct.setName(name);
-                                objProduct.setType(type);
-                                objProduct.setPrice(price);
-                                objProduct.setQuantity(quatity);
-                                list.add(objProduct);
-                            }
-                            Product_Adapter adapter = new Product_Adapter(getContext(),list);
-                            gridView.setAdapter(adapter);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            Toast.makeText(getContext().getApplicationContext(), "Error: "+e.getMessage(),Toast.LENGTH_LONG).show();
-                        }
-                        hideDialog();
-                    }
-                }, new Response.ErrorListener() {
+    public void add(){
+        dialog = new Dialog(getContext());
+        dialog.setContentView(R.layout.dialog_product);
+        EditText edName = dialog.findViewById(R.id.edName);
+        EditText edPrice = dialog.findViewById(R.id.edPrice);
+        EditText edNQuantity = dialog.findViewById(R.id.edQuantity);
+        EditText edType = dialog.findViewById(R.id.edType);
+        Button btnSave = dialog.findViewById(R.id.btnSave);
+        Button btnCancel = dialog.findViewById(R.id.btnCancel);
+
+        btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onErrorResponse(VolleyError volleyError) {
-                VolleyLog.d(TAG,"Error: "+ volleyError.getMessage());
-                Toast.makeText(getContext().getApplicationContext(),volleyError.getMessage(),Toast.LENGTH_LONG).show();
-                hideDialog();
+            public void onClick(View view) {
+                Product objProduct = new Product();
+                objProduct.setName(edName.getText().toString());
+                objProduct.setPrice(edPrice.getText().toString());
+                objProduct.setQuantity(edNQuantity.getText().toString());
+                objProduct.setType(edType.getText().toString());
+
+                AddProduct addProduct = new AddProduct(objProduct,getContext());
+                addProduct.execute();
+                reload(getContext());
+                dialog.dismiss();
             }
         });
-        // Adding request to request queue
-        AppController.getInstance().addToRequestQueue(arrayRequest);
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+
+    }
+    public void edit (final Product objProduct,Context context){
+        dialog = new Dialog(context);
+        dialog.setContentView(R.layout.dialog_product);
+        EditText edName = dialog.findViewById(R.id.edName);
+        EditText edPrice = dialog.findViewById(R.id.edPrice);
+        EditText edQuantity = dialog.findViewById(R.id.edQuantity);
+        EditText edType = dialog.findViewById(R.id.edType);
+
+        edName.setText(objProduct.getName());
+        edPrice.setText(objProduct.getPrice());
+        edQuantity.setText(objProduct.getQuantity());
+        edType.setText(objProduct.getType());
+
+        Button btnSave = dialog.findViewById(R.id.btnSave);
+        Button btnCancel = dialog.findViewById(R.id.btnCancel);
+
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Product objProduct = new Product();
+                objProduct.setName(edName.getText().toString());
+                objProduct.setPrice(edPrice.getText().toString());
+                objProduct.setQuantity(edQuantity.getText().toString());
+                objProduct.setType(edType.getText().toString());
+
+                EditProduct editProduct = new EditProduct(objProduct,context);
+                dialog.dismiss();
+            }
+        });
+
+        btnCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+    public void delete(final String id,Context context){
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle("Delete");
+        builder.setMessage("Bạn có muốn xóa không ?");
+        builder.setCancelable(true);
+        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                DeleteProduct deleteProduct = new DeleteProduct(id);
+                deleteProduct.execute();
+                dialog.cancel();
+            }
+        });
+        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        AlertDialog alert = builder.create();
+        builder.show();
     }
 
-    private void showDialog() {
-        if (!pDialog.isShowing()) {
-            pDialog.show();
-        }
-    }
-    private void hideDialog() {
-        if (pDialog.isShowing()) {
-            pDialog.dismiss();
-        }
-    }
+
+
+
 }
