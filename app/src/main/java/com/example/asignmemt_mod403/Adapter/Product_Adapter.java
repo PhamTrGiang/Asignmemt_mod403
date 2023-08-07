@@ -1,35 +1,42 @@
 package com.example.asignmemt_mod403.Adapter;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.provider.MediaStore;
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
-import androidx.fragment.app.Fragment;
-
-import com.example.asignmemt_mod403.DeleteProduct;
 import com.example.asignmemt_mod403.Fragment.Frag_product;
-import com.example.asignmemt_mod403.GetProduct;
 import com.example.asignmemt_mod403.Model.Product;
 import com.example.asignmemt_mod403.R;
-import com.example.asignmemt_mod403.UrlString;
 import com.squareup.picasso.Picasso;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Product_Adapter extends BaseAdapter {
-    Context context;
-    ArrayList<Product> list;
-    Frag_product frag_product;
+    List<Product> list;
+    private Callback callback;
 
-    public Product_Adapter(Context context, ArrayList<Product> list) {
-        this.context = context;
+    public void setTableItems(List<Product> list) {
         this.list = list;
-        frag_product = new Frag_product();
+        notifyDataSetChanged();
+    }
+
+    public Product_Adapter(ArrayList<Product> list,Callback callback) {
+        this.list = list;
+        this.callback = callback;
     }
 
     @Override
@@ -67,21 +74,31 @@ public class Product_Adapter extends BaseAdapter {
         name.setText(objProduct.getName());
         price.setText(objProduct.getPrice());
         quantity.setText(objProduct.getQuantity());
-        Picasso.get().load(UrlString.urlImg+objProduct.getImage()).into(img);
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        byte[] imageBytes = byteArrayOutputStream.toByteArray();
+        imageBytes = Base64.decode(objProduct.getImage(), Base64.DEFAULT);
+        Bitmap decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+        img.setImageBitmap(decodedImage);
+
 
         btnDel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                frag_product.delete(objProduct.getId(),context);
+                callback.deletePr(objProduct);
             }
         });
 
         btnEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                frag_product.edit(objProduct,context);
+                callback.editPr(objProduct);
             }
         });
         return classView;
+    }
+    public  interface Callback{
+        void editPr(Product model);
+        void deletePr(Product model);
     }
 }

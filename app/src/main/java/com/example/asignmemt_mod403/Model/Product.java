@@ -1,13 +1,13 @@
 package com.example.asignmemt_mod403.Model;
 
 public class Product {
-    String id,name,price,image,type,quantity;
+    String _id,name,price,image,type,quantity;
 
     public Product() {
     }
 
     public Product(String id, String name, String price, String image, String type, String quantity) {
-        this.id = id;
+        this._id = id;
         this.name = name;
         this.price = price;
         this.image = image;
@@ -16,11 +16,11 @@ public class Product {
     }
 
     public String getId() {
-        return id;
+        return _id;
     }
 
     public void setId(String id) {
-        this.id = id;
+        this._id = id;
     }
 
     public String getName() {

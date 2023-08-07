@@ -4,11 +4,15 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 
@@ -29,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
         ActionBar ab = getSupportActionBar();
         ab.setHomeAsUpIndicator(R.drawable.baseline_menu_24);
         ab.setDisplayHomeAsUpEnabled(true);
+        phanQuyen();
 
         setTitle("Sản phẩm");
         Frag_product frag_product = new Frag_product();
@@ -69,5 +74,20 @@ public class MainActivity extends AppCompatActivity {
         FragmentManager fm = getSupportFragmentManager();
         fm.beginTransaction().replace(R.id.flContent,frg).commit();
 
+    }
+
+    public boolean phanQuyen(){
+        if(Build.VERSION.SDK_INT>=23){
+            if(checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED){
+                return true;
+            }else{
+                ActivityCompat.requestPermissions(MainActivity.this,new String[]{
+                        android.Manifest.permission.CAMERA,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
+                return false;
+            }
+        }else{
+            return true;
+        }
     }
 }
